@@ -43,9 +43,10 @@ namespace o2::aod
 namespace jetcollisions
 {
 // Collision info
-DECLARE_SOA_COLUMN(GlobalIdx, globalIdx, int64_t);
+DECLARE_SOA_COLUMN(GlobalIdx, globalIdx, int);
 DECLARE_SOA_COLUMN(RunNumber, runNumber, int);
 DECLARE_SOA_COLUMN(Sel8, sel8, bool);
+DECLARE_SOA_COLUMN(MultTracks, multTracks, int);
 DECLARE_SOA_COLUMN(MultNTracksPV, multNTracksPV, int);
 DECLARE_SOA_COLUMN(MultFT0C, multFT0C, float);
 DECLARE_SOA_COLUMN(CentFT0C, centFT0C, float);
@@ -76,11 +77,13 @@ DECLARE_SOA_COLUMN(TPCFoundOverFindableCls, tpcFoundOverFindableCls, float);
 
 DECLARE_SOA_TABLE(JeColls, "AOD", "JECOLLS",
                   o2::soa::Index<>,
+                  jetcollisions::GlobalIdx,
                   collision::CollisionTime,
                   collision::NumContrib,
                   collision::PosX,
                   collision::PosY,
                   collision::PosZ,
+                  jetcollisions::MultTracks,
                   jetcollisions::Sel8,
                   jetcollisions::MultNTracksPV,
                   jetcollisions::MultFT0A,

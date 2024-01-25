@@ -153,19 +153,34 @@ struct jetspectraDerivedMaker {
 
   Preslice<aod::Track> trackPerColl = aod::track::collisionId;
   Produces<o2::aod::JeTracks> tableTrack;
+  Produces<o2::aod::JeColls> tableColl;
   using CollisionCandidate = soa::Join<aod::Collisions, aod::EvSels, aod::Mults, aod::CentFT0Ms, aod::CentFT0As, aod::CentFT0Cs>;
   using TrackCandidates = soa::Join<aod::FullTracks, aod::TracksDCA, aod::TrackSelection, aod::TracksCov>;
   unsigned int randomSeed = 1;
   void processData(CollisionCandidate const& collisions,
-                   TrackCandidates const& tracks)
+                   TrackCandidates const& tracks, aod::BCs const&)
   {
     for (const auto& collision : collisions) {
       if (!isEventSelected(collision)) {
         histos.fill(HIST("EventProp/rejectedCollId"), 1);
         continue;
       } else {
-        tableTrack.reserve(tracks.size());
         auto tracksInCollision = tracks.sliceBy(trackPerColl, collision.globalIndex());
+        tableColl(collision.globalIndex(),
+                  collision.collisionTime(),
+                  collision.numContrib(),
+                  collision.posX(),
+                  collision.posY(),
+                  collision.posZ(),
+                  collision.sel8(),
+                  tracksInCollision.size(),
+                  collision.multNTracksPV(),
+                  collision.multFT0A(),
+                  collision.multFT0C(),
+                  collision.centFT0A(),
+                  collision.centFT0C(),
+                  collision.bc().runNumber());
+        tableTrack.reserve(tracks.size());
         for (const auto& trk : tracksInCollision) {
           if (!customTrackCuts.IsSelected(trk)) {
             continue;

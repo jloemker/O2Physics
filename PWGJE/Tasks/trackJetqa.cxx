@@ -207,9 +207,9 @@ struct TrackJetQa {
     } else { // to keep the histos for Alice
       int nBins = 200;
       // event property histograms
-      histos.add("EventProp/collisionVtxZ", "Collsion Vertex Z;#it{Vtx}_{z} [cm];number of entries", HistType::kTH1F, {{nBins, -20, 20}});
-      histos.add("EventProp/collisionVtxZnoSel", "Collsion Vertex Z without event selection;#it{Vtx}_{z} [cm];number of entries", HistType::kTH1F, {{nBins, -20, 20}});
-      histos.add("EventProp/collisionVtxZSel8", "Collsion Vertex Z with event selection;#it{Vtx}_{z} [cm];number of entries", HistType::kTH1F, {{nBins, -20, 20}});
+      histos.add("EventProp/collisionVtxZ", "Collsion Vertex Z position", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
+      histos.add("EventProp/collisionVtxZnoSel", "Collsion Vertex Z position without event selection", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
+      histos.add("EventProp/collisionVtxZSel8", "Collsion Vertex Z position with event selection", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
       histos.add("EventProp/rejectedCollId", "CollisionId of collisions that did not pass the event selection; collisionId; number of entries", HistType::kTH1F, {{10, 0, 5}});
       // kinetic histograms
       histos.add("Kine/pt", "#it{p}_{T};#it{p}_{T} [GeV/c];number of entries", HistType::kTH1F, {{nBins, 0, 200}});
@@ -307,12 +307,10 @@ struct TrackJetQa {
   {
     for (const auto& collision : collisions) {
       if (fillEventQa(collision)) {
-
         if (fillMultiplicity) {
           histos.fill(HIST("Mult/MultCorrelations"), collision.centFT0A(), collision.centFT0C(), collision.centFT0M(), collision.multFT0A(), collision.multFT0C(), collision.multFT0M(), collision.multNTracksPV());
         }
         auto tracksInCollision = tracks.sliceBy(trackPerColl, collision.globalIndex());
-
         for (const auto& track : tracksInCollision) {
           if (track.has_collision() && (collision.globalIndex() == track.collisionId())) { // double check
             if (fillTrackQa(track)) {
@@ -404,91 +402,103 @@ struct TrackJetQa {
   }
   PROCESS_SWITCH(TrackJetQa, processFull, "Standard data processor", true);
 
-  void processDerived(aod::JeTracks::iterator const& track)
+  //Preslice<aod::JeTrack> tracksPerColl = aod::jettrack::collisionId;
+  void processDerived(aod::JeColls const& collisions, aod::JeTracks const& tracks)
   {
-    if (fillTrackQa(track)) {
-      // fill kinematic variables
-      histos.fill(HIST("Kine/pt"), track.pt());
-      if (track.hasTRD()) {
-        histos.fill(HIST("Kine/pt_TRD"), track.pt());
-        histos.fill(HIST("TrackPar/Sigma1Pt_hasTRD"), track.pt(), track.sigma1Pt() * track.pt());
-      }
-      if (!track.hasTRD()) {
-        histos.fill(HIST("TrackPar/Sigma1Pt_hasNoTRD"), track.pt(), track.sigma1Pt() * track.pt());
-      }
-      histos.fill(HIST("Kine/eta"), track.pt(), track.eta());
-      histos.fill(HIST("Kine/phi"), track.pt(), track.phi());
-      histos.fill(HIST("Kine/etaVSphi"), track.eta(), track.phi());
-      histos.fill(HIST("Kine/EtaPhiPt"), track.pt(), track.eta(), track.phi());
-      // fill track parameter variables
-      histos.fill(HIST("TrackPar/alpha"), track.pt(), track.alpha());
-      histos.fill(HIST("TrackPar/x"), track.pt(), track.x());
-      histos.fill(HIST("TrackPar/y"), track.pt(), track.y());
-      histos.fill(HIST("TrackPar/z"), track.pt(), track.z());
-      histos.fill(HIST("TrackPar/signed1Pt"), track.pt(), track.signed1Pt());
-      histos.fill(HIST("TrackPar/snp"), track.pt(), track.snp());
-      histos.fill(HIST("TrackPar/tgl"), track.pt(), track.tgl());
-      for (unsigned int i = 0; i < 64; i++) {
-        if (track.flags() & (1 << i)) {
-          histos.fill(HIST("TrackPar/flags"), track.pt(), i);
+    for (const auto& collision : collisions) {
+      if (fillEventQa(collision)) {
+        //auto tracksInCollision = tracks.sliceBy(tracksPerColl, collision.globalIdx());
+        for (const auto& track : tracks){
+          if (! (track.collisionId() == collision.globalIdx())){
+            LOGF(info, "Not compatible collision Id's: %d (tracks) and %d (collisions)", track.collisionId(), collision.globalIdx());
+            continue;
+          }
+          if (fillTrackQa(track)) {
+            // fill kinematic variables
+            histos.fill(HIST("Kine/pt"), track.pt());
+            if (track.hasTRD()) {
+              histos.fill(HIST("Kine/pt_TRD"), track.pt());
+              histos.fill(HIST("TrackPar/Sigma1Pt_hasTRD"), track.pt(), track.sigma1Pt() * track.pt());
+            }
+            if (!track.hasTRD()) {
+              histos.fill(HIST("TrackPar/Sigma1Pt_hasNoTRD"), track.pt(), track.sigma1Pt() * track.pt());
+            }
+            histos.fill(HIST("Kine/eta"), track.pt(), track.eta());
+            histos.fill(HIST("Kine/phi"), track.pt(), track.phi());
+            histos.fill(HIST("Kine/etaVSphi"), track.eta(), track.phi());
+            histos.fill(HIST("Kine/EtaPhiPt"), track.pt(), track.eta(), track.phi());
+            // fill track parameter variables
+            histos.fill(HIST("TrackPar/alpha"), track.pt(), track.alpha());
+            histos.fill(HIST("TrackPar/x"), track.pt(), track.x());
+            histos.fill(HIST("TrackPar/y"), track.pt(), track.y());
+            histos.fill(HIST("TrackPar/z"), track.pt(), track.z());
+            histos.fill(HIST("TrackPar/signed1Pt"), track.pt(), track.signed1Pt());
+            histos.fill(HIST("TrackPar/snp"), track.pt(), track.snp());
+            histos.fill(HIST("TrackPar/tgl"), track.pt(), track.tgl());
+            for (unsigned int i = 0; i < 64; i++) {
+              if (track.flags() & (1 << i)) {
+                histos.fill(HIST("TrackPar/flags"), track.pt(), i);
+              }
+            }
+            histos.fill(HIST("TrackPar/dcaXY"), track.pt(), track.dcaXY());
+            histos.fill(HIST("TrackPar/dcaZ"), track.pt(), track.dcaZ());
+            histos.fill(HIST("TrackPar/length"), track.pt(), track.length());
+            histos.fill(HIST("TrackPar/Sigma1Pt"), track.pt(), track.sigma1Pt() * track.pt());
+            //// check the uncertainty over pT activating several ITS layers
+            bool firstLayerActive = track.itsClusterMap() & (1 << 0);
+            bool secondLayerActive = track.itsClusterMap() & (1 << 1);
+            bool fourthLayerActive = track.itsClusterMap() & (1 << 3);
+            bool fifthLayerActive = track.itsClusterMap() & (1 << 4);
+            bool sixthLayerActive = track.itsClusterMap() & (1 << 5);
+            if (firstLayerActive) {
+              histos.fill(HIST("TrackPar/Sigma1Pt_Layer1"), track.pt(), track.sigma1Pt() * track.pt());
+            }
+            if (secondLayerActive) {
+              histos.fill(HIST("TrackPar/Sigma1Pt_Layer2"), track.pt(), track.sigma1Pt() * track.pt());
+            }
+            if (firstLayerActive && secondLayerActive) {
+              histos.fill(HIST("TrackPar/Sigma1Pt_Layers12"), track.pt(), track.sigma1Pt() * track.pt());
+            }
+            if (fourthLayerActive) {
+              histos.fill(HIST("TrackPar/Sigma1Pt_Layer4"), track.pt(), track.sigma1Pt() * track.pt());
+            }
+            if (fifthLayerActive) {
+              histos.fill(HIST("TrackPar/Sigma1Pt_Layer5"), track.pt(), track.sigma1Pt() * track.pt());
+            }
+            if (sixthLayerActive) {
+              histos.fill(HIST("TrackPar/Sigma1Pt_Layer6"), track.pt(), track.sigma1Pt() * track.pt());
+            }
+            if (fourthLayerActive && fifthLayerActive) {
+              histos.fill(HIST("TrackPar/Sigma1Pt_Layers45"), track.pt(), track.sigma1Pt() * track.pt());
+            }
+            if (fifthLayerActive && sixthLayerActive) {
+              histos.fill(HIST("TrackPar/Sigma1Pt_Layers56"), track.pt(), track.sigma1Pt() * track.pt());
+            }
+            if (fourthLayerActive && sixthLayerActive) {
+              histos.fill(HIST("TrackPar/Sigma1Pt_Layers46"), track.pt(), track.sigma1Pt() * track.pt());
+            }
+            if (fourthLayerActive && fifthLayerActive && sixthLayerActive) {
+              histos.fill(HIST("TrackPar/Sigma1Pt_Layers456"), track.pt(), track.sigma1Pt() * track.pt());
+            }
+            // fill ITS variables
+            histos.fill(HIST("ITS/itsNCls"), track.pt(), track.itsNCls());
+            histos.fill(HIST("ITS/itsChi2NCl"), track.pt(), track.itsChi2NCl());
+            for (unsigned int i = 0; i < 7; i++) {
+              if (track.itsClusterMap() & (1 << i)) {
+                histos.fill(HIST("ITS/itsHits"), track.pt(), i);
+              }
+            }
+            // fill TPC variables
+            histos.fill(HIST("TPC/tpcNClsFindable"), track.pt(), track.tpcNClsFindable());
+            histos.fill(HIST("TPC/tpcNClsFound"), track.pt(), track.tpcNClsFound());
+            histos.fill(HIST("TPC/tpcNClsShared"), track.pt(), track.tpcNClsShared());
+            histos.fill(HIST("TPC/tpcNClsCrossedRows"), track.pt(), track.tpcNClsCrossedRows());
+            histos.fill(HIST("TPC/tpcCrossedRowsOverFindableCls"), track.pt(), track.tpcCrossedRowsOverFindableCls());
+            histos.fill(HIST("TPC/tpcFractionSharedCls"), track.pt(), track.tpcFractionSharedCls());
+            histos.fill(HIST("TPC/tpcChi2NCl"), track.pt(), track.tpcChi2NCl());
+          }
         }
       }
-      histos.fill(HIST("TrackPar/dcaXY"), track.pt(), track.dcaXY());
-      histos.fill(HIST("TrackPar/dcaZ"), track.pt(), track.dcaZ());
-      histos.fill(HIST("TrackPar/length"), track.pt(), track.length());
-      histos.fill(HIST("TrackPar/Sigma1Pt"), track.pt(), track.sigma1Pt() * track.pt());
-      //// check the uncertainty over pT activating several ITS layers
-      bool firstLayerActive = track.itsClusterMap() & (1 << 0);
-      bool secondLayerActive = track.itsClusterMap() & (1 << 1);
-      bool fourthLayerActive = track.itsClusterMap() & (1 << 3);
-      bool fifthLayerActive = track.itsClusterMap() & (1 << 4);
-      bool sixthLayerActive = track.itsClusterMap() & (1 << 5);
-      if (firstLayerActive) {
-        histos.fill(HIST("TrackPar/Sigma1Pt_Layer1"), track.pt(), track.sigma1Pt() * track.pt());
-      }
-      if (secondLayerActive) {
-        histos.fill(HIST("TrackPar/Sigma1Pt_Layer2"), track.pt(), track.sigma1Pt() * track.pt());
-      }
-      if (firstLayerActive && secondLayerActive) {
-        histos.fill(HIST("TrackPar/Sigma1Pt_Layers12"), track.pt(), track.sigma1Pt() * track.pt());
-      }
-      if (fourthLayerActive) {
-        histos.fill(HIST("TrackPar/Sigma1Pt_Layer4"), track.pt(), track.sigma1Pt() * track.pt());
-      }
-      if (fifthLayerActive) {
-        histos.fill(HIST("TrackPar/Sigma1Pt_Layer5"), track.pt(), track.sigma1Pt() * track.pt());
-      }
-      if (sixthLayerActive) {
-        histos.fill(HIST("TrackPar/Sigma1Pt_Layer6"), track.pt(), track.sigma1Pt() * track.pt());
-      }
-      if (fourthLayerActive && fifthLayerActive) {
-        histos.fill(HIST("TrackPar/Sigma1Pt_Layers45"), track.pt(), track.sigma1Pt() * track.pt());
-      }
-      if (fifthLayerActive && sixthLayerActive) {
-        histos.fill(HIST("TrackPar/Sigma1Pt_Layers56"), track.pt(), track.sigma1Pt() * track.pt());
-      }
-      if (fourthLayerActive && sixthLayerActive) {
-        histos.fill(HIST("TrackPar/Sigma1Pt_Layers46"), track.pt(), track.sigma1Pt() * track.pt());
-      }
-      if (fourthLayerActive && fifthLayerActive && sixthLayerActive) {
-        histos.fill(HIST("TrackPar/Sigma1Pt_Layers456"), track.pt(), track.sigma1Pt() * track.pt());
-      }
-      // fill ITS variables
-      histos.fill(HIST("ITS/itsNCls"), track.pt(), track.itsNCls());
-      histos.fill(HIST("ITS/itsChi2NCl"), track.pt(), track.itsChi2NCl());
-      for (unsigned int i = 0; i < 7; i++) {
-        if (track.itsClusterMap() & (1 << i)) {
-          histos.fill(HIST("ITS/itsHits"), track.pt(), i);
-        }
-      }
-      // fill TPC variables
-      histos.fill(HIST("TPC/tpcNClsFindable"), track.pt(), track.tpcNClsFindable());
-      histos.fill(HIST("TPC/tpcNClsFound"), track.pt(), track.tpcNClsFound());
-      histos.fill(HIST("TPC/tpcNClsShared"), track.pt(), track.tpcNClsShared());
-      histos.fill(HIST("TPC/tpcNClsCrossedRows"), track.pt(), track.tpcNClsCrossedRows());
-      histos.fill(HIST("TPC/tpcCrossedRowsOverFindableCls"), track.pt(), track.tpcCrossedRowsOverFindableCls());
-      histos.fill(HIST("TPC/tpcFractionSharedCls"), track.pt(), track.tpcFractionSharedCls());
-      histos.fill(HIST("TPC/tpcChi2NCl"), track.pt(), track.tpcChi2NCl());
     }
   }
   PROCESS_SWITCH(TrackJetQa, processDerived, "Derived data processor", false);
