@@ -205,7 +205,7 @@ struct jetspectraDerivedMaker {
           }
         }
       }
-  }
+    }
   }
 
   PROCESS_SWITCH(jetspectraDerivedMaker, processData, "Process collision data for derived dataset production", true);
