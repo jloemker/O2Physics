@@ -135,6 +135,7 @@ struct TrackJetQa {
     const AxisSpec axisPercentileFT0A{binsPercentile, "Centrality FT0A"};
     const AxisSpec axisPercentileFT0C{binsPercentile, "Centrality FT0C"};
     const AxisSpec axisMultiplicityPV{binsMultPV, "Multiplicity N TracksPV"};
+    const AxisSpec axisMultiplicityTracks{binsMultPV, "Multiplicity tracks.size()"};
     const AxisSpec axisMultiplicityFT0M{binsMultiplicity, "Multiplicity FT0M"};
     const AxisSpec axisMultiplicityFT0A{binsMultiplicity, "Multiplicity FT0A"};
     const AxisSpec axisMultiplicityFT0C{binsMultiplicity, "Multiplicity FT0C"};
@@ -158,8 +159,8 @@ struct TrackJetQa {
       histos.add("EventProp/collisionVtxZnoSel", "Collsion Vertex Z position without event selection", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
       histos.add("EventProp/collisionVtxZSel8", "Collsion Vertex Z position with event selection", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
       histos.add("EventProp/rejectedCollId", "CollisionId of collisions that did not pass the event selection; collisionId; number of entries", HistType::kTH1F, {{10, 0, 5}});
-
-      histos.add("Mult/MultCorrelations", "Multiplicity and Centrality Correlations", HistType::kTHnSparseD, {axisPercentileFT0A, axisPercentileFT0C, axisPercentileFT0M, axisMultiplicityFT0A, axisMultiplicityFT0C, axisMultiplicityFT0M, axisMultiplicityPV});
+      histos.add("EventProp/MultCorrelations", "Multiplicity and Centrality Correlations", HistType::kTHnSparseD, {axisPercentileFT0A, axisPercentileFT0C, axisPercentileFT0M, axisMultiplicityFT0A, axisMultiplicityFT0C, axisMultiplicityFT0M, axisMultiplicityPV, axisMultiplicityTracks});
+      
       histos.add("TrackEventPar/MultCorrelations", "Sigma1Pt*pT vs Multiplicity and Centrality Correlations", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C, axisPercentileFT0M, axisMultiplicityFT0A, axisMultiplicityFT0C, axisMultiplicityFT0M, axisMultiplicityPV});
 
       // kinetic histograms
@@ -306,11 +307,11 @@ struct TrackJetQa {
                    TrackCandidates const& tracks)
   {
     for (const auto& collision : collisions) {
+      auto tracksInCollision = tracks.sliceBy(trackPerColl, collision.globalIndex());
       if (fillEventQa(collision)) {
         if (fillMultiplicity) {
-          histos.fill(HIST("Mult/MultCorrelations"), collision.centFT0A(), collision.centFT0C(), collision.centFT0M(), collision.multFT0A(), collision.multFT0C(), collision.multFT0M(), collision.multNTracksPV());
+          histos.fill(HIST("EventProp/MultCorrelations"), collision.centFT0A(), collision.centFT0C(), collision.centFT0M(), collision.multFT0A(), collision.multFT0C(), collision.multFT0M(), collision.multNTracksPV(), tracksInCollision.size());
         }
-        auto tracksInCollision = tracks.sliceBy(trackPerColl, collision.globalIndex());
         for (const auto& track : tracksInCollision) {
           if (track.has_collision() && (collision.globalIndex() == track.collisionId())) { // double check
             if (fillTrackQa(track)) {
@@ -406,7 +407,11 @@ struct TrackJetQa {
   void processDerived(aod::JeColls const& collisions, aod::JeTracks const& tracks)
   {
     for (const auto& collision : collisions) {
-      if (fillEventQa(collision)) {
+      if (fillEventQa(collision)) { //tracks in JeTracks are grouped according to collisions - track multiplicity stored in JeColl
+        
+        if (fillMultiplicity) { // FT0M for now dummy info as sum of FT0A and FT0C
+          histos.fill(HIST("EventProp/MultCorrelations"), collision.centFT0A(), collision.centFT0C(), collision.centFT0A() + collision.centFT0C(), collision.multFT0A(), collision.multFT0C(), collision.multFT0A() + collision.multFT0C(), collision.multNTracksPV(), collision.multTracks());
+        }
         //auto tracksInCollision = tracks.sliceBy(tracksPerColl, collision.globalIdx());
         for (const auto& track : tracks){
           if (! (track.collisionId() == collision.globalIdx())){
