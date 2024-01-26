@@ -159,7 +159,7 @@ struct TrackJetQa {
     histos.add("EventProp/collisionVtxZSel8", "Collsion Vertex Z position with event selection", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
     histos.add("EventProp/rejectedCollId", "CollisionId of collisions that did not pass the event selection; collisionId; number of entries", HistType::kTH1F, {{10, 0, 5}});
     histos.add("EventProp/MultCorrelations", "Multiplicity and Centrality Correlations", HistType::kTHnSparseD, {axisPercentileFT0A, axisPercentileFT0C, axisPercentileFT0M, axisMultiplicityFT0A, axisMultiplicityFT0C, axisMultiplicityFT0M, axisMultiplicityPV, axisMultiplicityTracks});
-    
+
     histos.add("TrackEventPar/MultCorrelations", "Sigma1Pt*pT vs Multiplicity and Centrality Correlations", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C, axisPercentileFT0M, axisMultiplicityFT0A, axisMultiplicityFT0C, axisMultiplicityFT0M, axisMultiplicityPV, axisMultiplicityTracks});
 
     // kinetic histograms
@@ -204,7 +204,7 @@ struct TrackJetQa {
     histos.add("TPC/tpcFractionSharedCls", "fraction of shared TPC clusters", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {100, 0., 1., "fraction shared clusters TPC"}, axisPercentileFT0A, axisPercentileFT0C});
     histos.add("TPC/tpcCrossedRowsOverFindableCls", "crossed TPC rows over findable clusters", HistType::kTHnSparseD, {axisPt, {120, 0.0, 1.2, "crossed rows / findable clusters TPC"}, axisPercentileFT0A, axisPercentileFT0C});
     histos.add("TPC/tpcChi2NCl", "chi2 per cluster in TPC", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {100, 0, 10, "chi2 / cluster TPC"}, axisPercentileFT0A, axisPercentileFT0C});
-  
+
     histos.print();
   }
 
@@ -246,7 +246,8 @@ struct TrackJetQa {
   }
 
   template <typename Tracks, typename eventInfo>
-  void fillTrackQa(Tracks const& track, eventInfo const& collision){
+  void fillTrackQa(Tracks const& track, eventInfo const& collision)
+  {
     // fill kinematic variables
     histos.fill(HIST("Kine/pt"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
     if (track.hasTRD()) {
@@ -339,11 +340,11 @@ struct TrackJetQa {
         histos.fill(HIST("EventProp/MultCorrelations"), collision.centFT0A(), collision.centFT0C(), collision.centFT0M(), collision.multFT0A(), collision.multFT0C(), collision.multFT0M(), collision.multNTracksPV(), tracksInCollision.size());
         for (const auto& track : tracksInCollision) {
           if (track.has_collision() && (collision.globalIndex() == track.collisionId())) {
-            if(checkTrackSelection(track)){
+            if (checkTrackSelection(track)) {
               histos.fill(HIST("TrackEventPar/MultCorrelations"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C(), collision.centFT0M(), collision.multFT0A(), collision.multFT0C(), collision.multFT0M(), collision.multNTracksPV(), tracksInCollision.size());
               fillTrackQa(track, collision);
             }
-          } 
+          }
         }
       } else {
         histos.fill(HIST("EventProp/rejectedCollId"), 1);
@@ -356,13 +357,13 @@ struct TrackJetQa {
   {
     for (const auto& collision : collisions) {
       if (checkEventSelection(collision)) {
-        histos.fill(HIST("EventProp/MultCorrelations"), collision.centFT0A(), collision.centFT0C(), collision.centFT0A() + collision.centFT0C(), collision.multFT0A(), collision.multFT0C(), collision.multFT0A() + collision.multFT0C(), collision.multNTracksPV(), collision.multTracks());  
-        for (const auto& track : tracks){
-          if (! (track.collisionId() == collision.globalIdx())){
+        histos.fill(HIST("EventProp/MultCorrelations"), collision.centFT0A(), collision.centFT0C(), collision.centFT0A() + collision.centFT0C(), collision.multFT0A(), collision.multFT0C(), collision.multFT0A() + collision.multFT0C(), collision.multNTracksPV(), collision.multTracks());
+        for (const auto& track : tracks) {
+          if (!(track.collisionId() == collision.globalIdx())) {
             continue;
           }
-          //LOGF(info, "Compatible Id's: %d (tracks) and %d (collisions)", track.collisionId(), collision.globalIdx());
-          if(checkTrackSelection(track)){
+          // LOGF(info, "Compatible Id's: %d (tracks) and %d (collisions)", track.collisionId(), collision.globalIdx());
+          if (checkTrackSelection(track)) {
             histos.fill(HIST("TrackEventPar/MultCorrelations"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C(), collision.centFT0A() + collision.centFT0C(), collision.multFT0A(), collision.multFT0C(), collision.multFT0A() + collision.multFT0C(), collision.multNTracksPV(), collision.multTracks());
             fillTrackQa(track, collision);
           }
