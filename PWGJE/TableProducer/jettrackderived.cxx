@@ -156,7 +156,7 @@ struct jetspectraDerivedMaker {
   Produces<o2::aod::JeColls> tableColl;
   using CollisionCandidate = soa::Join<aod::Collisions, aod::EvSels, aod::Mults, aod::CentFT0Ms, aod::CentFT0As, aod::CentFT0Cs>;
   using TrackCandidates = soa::Join<aod::FullTracks, aod::TracksDCA, aod::TrackSelection, aod::TracksCov>;
-  unsigned int randomSeed = 1;
+  unsigned int randomSeed = 0;
   void processData(CollisionCandidate const& collisions,
                    TrackCandidates const& tracks, aod::BCs const&)
   {

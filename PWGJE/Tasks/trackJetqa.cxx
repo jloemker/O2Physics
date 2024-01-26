@@ -10,11 +10,11 @@
 // or submit itself to any jurisdiction.
 
 /// \author Alice Caluisi <alice.caluisi@cern.ch>
-// \since July 2023
-
-//
-// Task producing jet tracking qa histograms
-//
+/// \since July 2023
+/// \author Johanna Lömker <johanna.lomker@cern.ch>
+/// \since  2023-10-02
+///  \brief Task producing jet tracking qa histograms
+///
 #include <iostream>
 
 #include "Framework/AnalysisDataModel.h"
@@ -66,7 +66,7 @@ struct TrackJetQa {
   Configurable<float> minTPCNClsFound{"minTPCNClsFound", 0.f, "Additional cut on the minimum value of the number of found clusters in the TPC"};
 
   HistogramRegistry histos{"Histos", {}, OutputObjHandlingPolicy::AnalysisObject};
-  ConfigurableAxis binsMultiplicity{"binsMultiplicity", {100, 0, 100}, "Binning for multiplicity"};
+  ConfigurableAxis binsMultiplicity{"binsMultiplicity", {2000, 0, 2000}, "Binning for multiplicity"};
   ConfigurableAxis binsMultPV{"binsMultNTracksPV", {10000, 0, 50000}, "Binning for the multNTracksPV axis"};
   ConfigurableAxis binsPercentile{"binsPercentile", {100, 0, 100}, "Binning for percentiles"};
   ConfigurableAxis binsVtx{"binsVtx", {200, -20, 20}, "Binning for the vertex position z axis"};
@@ -135,7 +135,7 @@ struct TrackJetQa {
     const AxisSpec axisPercentileFT0A{binsPercentile, "Centrality FT0A"};
     const AxisSpec axisPercentileFT0C{binsPercentile, "Centrality FT0C"};
     const AxisSpec axisMultiplicityPV{binsMultPV, "Multiplicity N TracksPV"};
-    const AxisSpec axisMultiplicityTracks{binsMultPV, "Multiplicity tracks.size()"};
+    const AxisSpec axisMultiplicityTracks{binsMultiplicity, "Multiplicity tracks.size()"};
     const AxisSpec axisMultiplicityFT0M{binsMultiplicity, "Multiplicity FT0M"};
     const AxisSpec axisMultiplicityFT0A{binsMultiplicity, "Multiplicity FT0A"};
     const AxisSpec axisMultiplicityFT0C{binsMultiplicity, "Multiplicity FT0C"};
@@ -153,117 +153,63 @@ struct TrackJetQa {
     const AxisSpec axisDcaZ{binsDcaZ, "#it{dcaZ} [cm]"};
     const AxisSpec axisTrackLength{binsLength, "#it{Length} [cm]"};
 
-    if (fillMultiplicity) {
-      // event property histograms
-      histos.add("EventProp/collisionVtxZ", "Collsion Vertex Z position", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("EventProp/collisionVtxZnoSel", "Collsion Vertex Z position without event selection", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("EventProp/collisionVtxZSel8", "Collsion Vertex Z position with event selection", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("EventProp/rejectedCollId", "CollisionId of collisions that did not pass the event selection; collisionId; number of entries", HistType::kTH1F, {{10, 0, 5}});
-      histos.add("EventProp/MultCorrelations", "Multiplicity and Centrality Correlations", HistType::kTHnSparseD, {axisPercentileFT0A, axisPercentileFT0C, axisPercentileFT0M, axisMultiplicityFT0A, axisMultiplicityFT0C, axisMultiplicityFT0M, axisMultiplicityPV, axisMultiplicityTracks});
-      
-      histos.add("TrackEventPar/MultCorrelations", "Sigma1Pt*pT vs Multiplicity and Centrality Correlations", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C, axisPercentileFT0M, axisMultiplicityFT0A, axisMultiplicityFT0C, axisMultiplicityFT0M, axisMultiplicityPV});
+    // event property histograms
+    histos.add("EventProp/collisionVtxZ", "Collsion Vertex Z position", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("EventProp/collisionVtxZnoSel", "Collsion Vertex Z position without event selection", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("EventProp/collisionVtxZSel8", "Collsion Vertex Z position with event selection", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("EventProp/rejectedCollId", "CollisionId of collisions that did not pass the event selection; collisionId; number of entries", HistType::kTH1F, {{10, 0, 5}});
+    histos.add("EventProp/MultCorrelations", "Multiplicity and Centrality Correlations", HistType::kTHnSparseD, {axisPercentileFT0A, axisPercentileFT0C, axisPercentileFT0M, axisMultiplicityFT0A, axisMultiplicityFT0C, axisMultiplicityFT0M, axisMultiplicityPV, axisMultiplicityTracks});
+    
+    histos.add("TrackEventPar/MultCorrelations", "Sigma1Pt*pT vs Multiplicity and Centrality Correlations", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C, axisPercentileFT0M, axisMultiplicityFT0A, axisMultiplicityFT0C, axisMultiplicityFT0M, axisMultiplicityPV, axisMultiplicityTracks});
 
-      // kinetic histograms
-      histos.add("Kine/pt", "#it{p}_{T}", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("Kine/pt_TRD", "#it{p}_{T} if track has a TRD match", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("Kine/EtaPhiPt", "Correlation of #eta #phi and #it{p}_{T}", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisEta, axisPhi, axisPercentileFT0A, axisPercentileFT0C});
+    // kinetic histograms
+    histos.add("Kine/pt", "#it{p}_{T}", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("Kine/pt_TRD", "#it{p}_{T} if track has a TRD match", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("Kine/EtaPhiPt", "Correlation of #eta #phi and #it{p}_{T}", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisEta, axisPhi, axisPercentileFT0A, axisPercentileFT0C});
 
-      // track parameter histograms - add sigma 1pt to all of them ! then cp this part to below
-      histos.add("TrackPar/xyz", "track #it{x}, #it{y}, #it{z} position at dca in local coordinate system", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisTrackX, axisTrackY, axisTrackZ, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/alpha", "rotation angle of local wrt. global coordinate system", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisRotation, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/signed1Pt", "track signed 1/#it{p}_{T}", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisSignedPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/snp", "sinus of track momentum azimuthal angle (snp)", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {11, -0.1, 0.1, "snp"}, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/tgl", "tangent of the track momentum dip angle (tgl)", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {200, -1., 1., "tgl"}, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/flags", "track flag;#it{p}_{T} [GeV/c];flag bit", {HistType::kTH2F, {{200, 0, 200}, {64, -0.5, 63.5}}});
-      histos.add("TrackPar/dcaXY", "distance of closest approach in #it{xy} plane", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisDcaXY, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/dcaZ", "distance of closest approach in #it{z}", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisDcaZ, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/length", "track length in cm", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisTrackLength, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/Sigma1Pt", "uncertainty over #it{p}_{T}", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/Sigma1Pt_hasTRD", "uncertainty over #it{p}_{T} for tracks with TRD", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/Sigma1Pt_hasNoTRD", "uncertainty over #it{p}_{T} for tracks without TRD", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/Sigma1Pt_Layer1", "uncertainty over #it{p}_{T} with only 1st ITS layer active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/Sigma1Pt_Layer2", "uncertainty over #it{p}_{T} with only 2nd ITS layer active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/Sigma1Pt_Layers12", "uncertainty over #it{p}_{T} with only 1st and 2nd ITS layers active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/Sigma1Pt_Layer4", "uncertainty over #it{p}_{T} with only 4th ITS layer active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/Sigma1Pt_Layer5", "uncertainty over #it{p}_{T} with only 5th ITS layer active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/Sigma1Pt_Layer6", "uncertainty over #it{p}_{T} with only 6th ITS layer active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/Sigma1Pt_Layers45", "uncertainty over #it{p}_{T} with only 4th and 5th ITS layers active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/Sigma1Pt_Layers56", "uncertainty over #it{p}_{T} with only 5th and 6th ITS layers active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/Sigma1Pt_Layers46", "uncertainty over #it{p}_{T} with only 4th and 6th ITS layers active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TrackPar/Sigma1Pt_Layers456", "uncertainty over #it{p}_{T} with only 4th, 5th and 6th ITS layers active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    // track parameter histograms - add sigma 1pt to all of them ! then cp this part to below
+    histos.add("TrackPar/xyz", "track #it{x}, #it{y}, #it{z} position at dca in local coordinate system", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisTrackX, axisTrackY, axisTrackZ, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/alpha", "rotation angle of local wrt. global coordinate system", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisRotation, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/signed1Pt", "track signed 1/#it{p}_{T}", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisSignedPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/snp", "sinus of track momentum azimuthal angle (snp)", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {11, -0.1, 0.1, "snp"}, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/tgl", "tangent of the track momentum dip angle (tgl)", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {200, -1., 1., "tgl"}, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/flags", "track flag;#it{p}_{T} [GeV/c];flag bit", {HistType::kTH2F, {{200, 0, 200}, {64, -0.5, 63.5}}});
+    histos.add("TrackPar/dcaXY", "distance of closest approach in #it{xy} plane", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisDcaXY, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/dcaZ", "distance of closest approach in #it{z}", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisDcaZ, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/length", "track length in cm", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisTrackLength, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/Sigma1Pt", "uncertainty over #it{p}_{T}", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/Sigma1Pt_hasTRD", "uncertainty over #it{p}_{T} for tracks with TRD", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/Sigma1Pt_hasNoTRD", "uncertainty over #it{p}_{T} for tracks without TRD", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/Sigma1Pt_Layer1", "uncertainty over #it{p}_{T} with only 1st ITS layer active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/Sigma1Pt_Layer2", "uncertainty over #it{p}_{T} with only 2nd ITS layer active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/Sigma1Pt_Layers12", "uncertainty over #it{p}_{T} with only 1st and 2nd ITS layers active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/Sigma1Pt_Layer4", "uncertainty over #it{p}_{T} with only 4th ITS layer active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/Sigma1Pt_Layer5", "uncertainty over #it{p}_{T} with only 5th ITS layer active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/Sigma1Pt_Layer6", "uncertainty over #it{p}_{T} with only 6th ITS layer active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/Sigma1Pt_Layers45", "uncertainty over #it{p}_{T} with only 4th and 5th ITS layers active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/Sigma1Pt_Layers56", "uncertainty over #it{p}_{T} with only 5th and 6th ITS layers active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/Sigma1Pt_Layers46", "uncertainty over #it{p}_{T} with only 4th and 6th ITS layers active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TrackPar/Sigma1Pt_Layers456", "uncertainty over #it{p}_{T} with only 4th, 5th and 6th ITS layers active", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, axisPercentileFT0A, axisPercentileFT0C});
 
-      // ITS histograms
-      histos.add("ITS/itsNCls", "number of found ITS clusters", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {8, -0.5, 7.5, "# clusters ITS"}, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("ITS/itsChi2NCl", "chi2 per ITS cluster", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {100, 0, 40, "chi2 / cluster ITS"}, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("ITS/itsHits", "hitmap ITS", HistType::kTHnSparseD, {axisPt, {7, -0.5, 6.5, "layer ITS"}, axisPercentileFT0A, axisPercentileFT0C});
+    // ITS histograms
+    histos.add("ITS/itsNCls", "number of found ITS clusters", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {8, -0.5, 7.5, "# clusters ITS"}, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("ITS/itsChi2NCl", "chi2 per ITS cluster", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {100, 0, 40, "chi2 / cluster ITS"}, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("ITS/itsHits", "hitmap ITS", HistType::kTHnSparseD, {axisPt, {7, -0.5, 6.5, "layer ITS"}, axisPercentileFT0A, axisPercentileFT0C});
 
-      // TPC histograms
-      histos.add("TPC/tpcNClsFindable", "number of findable TPC clusters", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {165, -0.5, 164.5, "# findable clusters TPC"}, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TPC/tpcNClsFound", "number of found TPC clusters", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {165, -0.5, 164.5, "# clusters TPC"}, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TPC/tpcNClsShared", "number of shared TPC clusters", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {165, -0.5, 164.5, "# shared clusters TPC"}, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TPC/tpcNClsCrossedRows", "number of crossed TPC rows", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {165, -0.5, 164.5, "# crossed rows TPC"}, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TPC/tpcFractionSharedCls", "fraction of shared TPC clusters", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {100, 0., 1., "fraction shared clusters TPC"}, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TPC/tpcCrossedRowsOverFindableCls", "crossed TPC rows over findable clusters", HistType::kTHnSparseD, {axisPt, {120, 0.0, 1.2, "crossed rows / findable clusters TPC"}, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("TPC/tpcChi2NCl", "chi2 per cluster in TPC", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {100, 0, 10, "chi2 / cluster TPC"}, axisPercentileFT0A, axisPercentileFT0C});
-    } else { // to keep the histos for Alice
-      int nBins = 200;
-      // event property histograms
-      histos.add("EventProp/collisionVtxZ", "Collsion Vertex Z position", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("EventProp/collisionVtxZnoSel", "Collsion Vertex Z position without event selection", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("EventProp/collisionVtxZSel8", "Collsion Vertex Z position with event selection", HistType::kTHnSparseD, {axisVtx, axisPercentileFT0A, axisPercentileFT0C});
-      histos.add("EventProp/rejectedCollId", "CollisionId of collisions that did not pass the event selection; collisionId; number of entries", HistType::kTH1F, {{10, 0, 5}});
-      // kinetic histograms
-      histos.add("Kine/pt", "#it{p}_{T};#it{p}_{T} [GeV/c];number of entries", HistType::kTH1F, {{nBins, 0, 200}});
-      histos.add("Kine/pt_TRD", "#it{p}_{T} if track has a TRD match;#it{p}_{T} [GeV/c];number of entries", HistType::kTH1F, {{nBins, 0, 200}});
-      histos.add("Kine/eta", "#eta;#it{p}_{T} [GeV/c];#eta", {HistType::kTH2F, {{nBins, 0, 200}, {180, -0.9, 0.9}}});
-      histos.add("Kine/phi", "#phi;#it{p}_{T} [GeV/c];#phi [rad]", {HistType::kTH2F, {{nBins, 0, 200}, {180, 0., 2 * M_PI}}});
-      histos.add("Kine/etaVSphi", "#eta VS phi;#eta;#phi [rad]", {HistType::kTH2F, {{180, -0.9, 0.9}, {180, 0., 2 * M_PI}}});
-      histos.add("Kine/EtaPhiPt", "Correlation of #eta, #phi and #it{p}_{T}; #it{p}_{T} [GeV/c]; #eta; #phi [rad]", {HistType::kTH3F, {{nBins, 0, 200}, {180, -0.9, 0.9}, {180, 0., 2 * M_PI}}});
-
-      // track parameter histograms
-      histos.add("TrackPar/x", "track #it{x} position at dca in local coordinate system;#it{p}_{T} [GeV/c];#it{x} [cm]", {HistType::kTH2F, {{nBins, 0, 200}, {200, -0.36, 0.36}}});
-      histos.add("TrackPar/y", "track #it{y} position at dca in local coordinate system;#it{p}_{T} [GeV/c];#it{y} [cm]", {HistType::kTH2F, {{nBins, 0, 200}, {200, -0.5, 0.5}}});
-      histos.add("TrackPar/z", "track #it{z} position at dca in local coordinate system;#it{p}_{T} [GeV/c];#it{z} [cm]", {HistType::kTH2F, {{nBins, 0, 200}, {200, -11., 11.}}});
-      histos.add("TrackPar/alpha", "rotation angle of local wrt. global coordinate system;#it{p}_{T} [GeV/c];#alpha [rad]", {HistType::kTH2F, {{nBins, 0, 200}, {36, -M_PI, M_PI}}});
-      histos.add("TrackPar/signed1Pt", "track signed 1/#it{p}_{T};#it{p}_{T} [GeV/c];#it{q}/#it{p}_{T}", {HistType::kTH2F, {{nBins, 0, 200}, {200, -8, 8}}});
-      histos.add("TrackPar/snp", "sinus of track momentum azimuthal angle;#it{p}_{T} [GeV/c];snp", {HistType::kTH2F, {{nBins, 0, 200}, {11, -0.1, 0.1}}});
-      histos.add("TrackPar/tgl", "tangent of the track momentum dip angle;#it{p}_{T} [GeV/c];tgl;", {HistType::kTH2F, {{nBins, 0, 200}, {200, -1., 1.}}});
-      histos.add("TrackPar/flags", "track flag;#it{p}_{T} [GeV/c];flag bit", {HistType::kTH2F, {{nBins, 0, 200}, {64, -0.5, 63.5}}});
-      histos.add("TrackPar/dcaXY", "distance of closest approach in #it{xy} plane;#it{p}_{T} [GeV/c];#it{dcaXY} [cm];", {HistType::kTH2F, {{nBins, 0, 200}, {200, -0.15, 0.15}}});
-      histos.add("TrackPar/dcaZ", "distance of closest approach in #it{z};#it{p}_{T} [GeV/c];#it{dcaZ} [cm];", {HistType::kTH2F, {{nBins, 0, 200}, {200, -0.15, 0.15}}});
-      histos.add("TrackPar/length", "track length in cm;#it{p}_{T} [GeV/c];#it{Length} [cm];", {HistType::kTH2F, {{nBins, 0, 200}, {200, 0, 1000}}});
-      histos.add("TrackPar/Sigma1Pt", "uncertainty over #it{p}_{T};#it{p}_{T} [GeV/c];#it{p}_{T}*#it{sigma1}{p}_{T};", {HistType::kTH2F, {{nBins, 0, 200}, {100, 0, 1}}});
-      histos.add("TrackPar/Sigma1Pt_hasTRD", "uncertainty over #it{p}_{T} for tracks with TRD;#it{p}_{T} [GeV/c];#it{p}_{T}*#it{sigma1}{p}_{T};", {HistType::kTH2F, {{nBins, 0, 200}, {100, 0, 1}}});
-      histos.add("TrackPar/Sigma1Pt_hasNoTRD", "uncertainty over #it{p}_{T} for tracks without TRD;#it{p}_{T} [GeV/c];#it{p}_{T}*#it{sigma1}{p}_{T};", {HistType::kTH2F, {{nBins, 0, 200}, {100, 0, 1}}});
-      histos.add("TrackPar/Sigma1Pt_Layer1", "uncertainty over #it{p}_{T} with only 1st ITS layer active;#it{p}_{T} [GeV/c];#it{p}_{T}*#it{sigma1}{p}_{T};", {HistType::kTH2F, {{nBins, 0, 200}, {100, 0, 1}}});
-      histos.add("TrackPar/Sigma1Pt_Layer2", "uncertainty over #it{p}_{T} with only 2nd ITS layer active;#it{p}_{T} [GeV/c];#it{p}_{T}*#it{sigma1}{p}_{T};", {HistType::kTH2F, {{nBins, 0, 200}, {100, 0, 1}}});
-      histos.add("TrackPar/Sigma1Pt_Layers12", "uncertainty over #it{p}_{T} with only 1st and 2nd ITS layers active;#it{p}_{T} [GeV/c];#it{p}_{T}*#it{sigma1}{p}_{T};", {HistType::kTH2F, {{nBins, 0, 200}, {100, 0, 1}}});
-      histos.add("TrackPar/Sigma1Pt_Layer4", "uncertainty over #it{p}_{T} with only 4th ITS layer active;#it{p}_{T} [GeV/c];#it{p}_{T}*#it{sigma1}{p}_{T};", {HistType::kTH2F, {{nBins, 0, 200}, {100, 0, 1}}});
-      histos.add("TrackPar/Sigma1Pt_Layer5", "uncertainty over #it{p}_{T} with only 5th ITS layer active;#it{p}_{T} [GeV/c];#it{p}_{T}*#it{sigma1}{p}_{T};", {HistType::kTH2F, {{nBins, 0, 200}, {100, 0, 1}}});
-      histos.add("TrackPar/Sigma1Pt_Layer6", "uncertainty over #it{p}_{T} with only 6th ITS layer active;#it{p}_{T} [GeV/c];#it{p}_{T}*#it{sigma1}{p}_{T};", {HistType::kTH2F, {{nBins, 0, 200}, {100, 0, 1}}});
-      histos.add("TrackPar/Sigma1Pt_Layers45", "uncertainty over #it{p}_{T} with only 4th and 5th ITS layers active;#it{p}_{T} [GeV/c];#it{p}_{T}*#it{sigma1}{p}_{T};", {HistType::kTH2F, {{nBins, 0, 200}, {100, 0, 1}}});
-      histos.add("TrackPar/Sigma1Pt_Layers56", "uncertainty over #it{p}_{T} with only 5th and 6th ITS layers active;#it{p}_{T} [GeV/c];#it{p}_{T}*#it{sigma1}{p}_{T};", {HistType::kTH2F, {{nBins, 0, 200}, {100, 0, 1}}});
-      histos.add("TrackPar/Sigma1Pt_Layers46", "uncertainty over #it{p}_{T} with only 4th and 6th ITS layers active;#it{p}_{T} [GeV/c];#it{p}_{T}*#it{sigma1}{p}_{T};", {HistType::kTH2F, {{nBins, 0, 200}, {100, 0, 1}}});
-      histos.add("TrackPar/Sigma1Pt_Layers456", "uncertainty over #it{p}_{T} with only 4th, 5th and 6th ITS layers active;#it{p}_{T} [GeV/c];#it{p}_{T}*#it{sigma1}{p}_{T};", {HistType::kTH2F, {{nBins, 0, 200}, {100, 0, 1}}});
-      // ITS histograms
-      histos.add("ITS/itsNCls", "number of found ITS clusters", {HistType::kTH2F, {axisPt, {8, -0.5, 7.5, "# clusters ITS"}}});
-      histos.add("ITS/itsChi2NCl", "chi2 per ITS cluster", {HistType::kTH2F, {axisPt, {100, 0, 40, "chi2 / cluster ITS"}}});
-      histos.add("ITS/itsHits", "hitmap ITS", {HistType::kTH2F, {axisPt, {7, -0.5, 6.5, "layer ITS"}}});
-
-      // TPC histograms
-      histos.add("TPC/tpcNClsFindable", "number of findable TPC clusters", {HistType::kTH2F, {axisPt, {165, -0.5, 164.5, "# findable clusters TPC"}}});
-      histos.add("TPC/tpcNClsFound", "number of found TPC clusters", {HistType::kTH2F, {axisPt, {165, -0.5, 164.5, "# clusters TPC"}}});
-      histos.add("TPC/tpcNClsShared", "number of shared TPC clusters", {HistType::kTH2F, {axisPt, {165, -0.5, 164.5, "# shared clusters TPC"}}});
-      histos.add("TPC/tpcNClsCrossedRows", "number of crossed TPC rows", {HistType::kTH2F, {axisPt, {165, -0.5, 164.5, "# crossed rows TPC"}}});
-      histos.add("TPC/tpcFractionSharedCls", "fraction of shared TPC clusters", {HistType::kTH2F, {axisPt, {100, 0., 1., "fraction shared clusters TPC"}}});
-      histos.add("TPC/tpcCrossedRowsOverFindableCls", "crossed TPC rows over findable clusters", {HistType::kTH2F, {axisPt, {120, 0.0, 1.2, "crossed rows / findable clusters TPC"}}});
-      histos.add("TPC/tpcChi2NCl", "chi2 per cluster in TPC", {HistType::kTH2F, {axisPt, {100, 0, 10, "chi2 / cluster TPC"}}});
-    }
+    // TPC histograms
+    histos.add("TPC/tpcNClsFindable", "number of findable TPC clusters", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {165, -0.5, 164.5, "# findable clusters TPC"}, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TPC/tpcNClsFound", "number of found TPC clusters", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {165, -0.5, 164.5, "# clusters TPC"}, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TPC/tpcNClsShared", "number of shared TPC clusters", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {165, -0.5, 164.5, "# shared clusters TPC"}, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TPC/tpcNClsCrossedRows", "number of crossed TPC rows", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {165, -0.5, 164.5, "# crossed rows TPC"}, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TPC/tpcFractionSharedCls", "fraction of shared TPC clusters", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {100, 0., 1., "fraction shared clusters TPC"}, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TPC/tpcCrossedRowsOverFindableCls", "crossed TPC rows over findable clusters", HistType::kTHnSparseD, {axisPt, {120, 0.0, 1.2, "crossed rows / findable clusters TPC"}, axisPercentileFT0A, axisPercentileFT0C});
+    histos.add("TPC/tpcChi2NCl", "chi2 per cluster in TPC", HistType::kTHnSparseD, {axisPt, axisSigma1OverPt, {100, 0, 10, "chi2 / cluster TPC"}, axisPercentileFT0A, axisPercentileFT0C});
+  
     histos.print();
   }
 
   template <typename eventInfo>
-  bool fillEventQa(eventInfo const& collision)
+  bool checkEventSelection(eventInfo const& collision)
   {
     // fill event property variables
     histos.fill(HIST("EventProp/collisionVtxZnoSel"), collision.posZ(), collision.centFT0A(), collision.centFT0C());
@@ -281,7 +227,7 @@ struct TrackJetQa {
   }
 
   template <typename Tracks>
-  bool fillTrackQa(Tracks const& track)
+  bool checkTrackSelection(Tracks const& track)
   {
     // check track selection
     if ((globalTrack == true) && (!track.isGlobalTrack())) {
@@ -299,6 +245,87 @@ struct TrackJetQa {
     return true;
   }
 
+  template <typename Tracks, typename eventInfo>
+  void fillTrackQa(Tracks const& track, eventInfo const& collision){
+    // fill kinematic variables
+    histos.fill(HIST("Kine/pt"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    if (track.hasTRD()) {
+      histos.fill(HIST("Kine/pt_TRD"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+      histos.fill(HIST("TrackPar/Sigma1Pt_hasTRD"), track.pt(), track.sigma1Pt() * track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    }
+    if (!track.hasTRD()) {
+      histos.fill(HIST("TrackPar/Sigma1Pt_hasNoTRD"), track.pt(), track.sigma1Pt() * track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    }
+    histos.fill(HIST("Kine/EtaPhiPt"), track.pt(), track.sigma1Pt() * track.pt(), track.eta(), track.phi(), collision.centFT0A(), collision.centFT0C());
+    // fill track parameter variables
+    histos.fill(HIST("TrackPar/alpha"), track.pt(), track.sigma1Pt() * track.pt(), track.alpha(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("TrackPar/xyz"), track.pt(), track.sigma1Pt() * track.pt(), track.x(), track.y(), track.z(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("TrackPar/signed1Pt"), track.pt(), track.sigma1Pt() * track.pt(), track.signed1Pt(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("TrackPar/snp"), track.pt(), track.sigma1Pt() * track.pt(), track.snp(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("TrackPar/tgl"), track.pt(), track.sigma1Pt() * track.pt(), track.tgl(), collision.centFT0A(), collision.centFT0C());
+    for (unsigned int i = 0; i < 64; i++) {
+      if (track.flags() & (1 << i)) {
+        histos.fill(HIST("TrackPar/flags"), track.pt(), track.sigma1Pt() * track.pt(), i);
+      }
+    }
+    histos.fill(HIST("TrackPar/dcaXY"), track.pt(), track.sigma1Pt() * track.pt(), track.dcaXY(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("TrackPar/dcaZ"), track.pt(), track.sigma1Pt() * track.pt(), track.dcaZ(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("TrackPar/length"), track.pt(), track.sigma1Pt() * track.pt(), track.length(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("TrackPar/Sigma1Pt"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    //// check the uncertainty over pT activating several ITS layers
+    bool firstLayerActive = track.itsClusterMap() & (1 << 0);
+    bool secondLayerActive = track.itsClusterMap() & (1 << 1);
+    bool fourthLayerActive = track.itsClusterMap() & (1 << 3);
+    bool fifthLayerActive = track.itsClusterMap() & (1 << 4);
+    bool sixthLayerActive = track.itsClusterMap() & (1 << 5);
+    if (firstLayerActive) {
+      histos.fill(HIST("TrackPar/Sigma1Pt_Layer1"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    }
+    if (secondLayerActive) {
+      histos.fill(HIST("TrackPar/Sigma1Pt_Layer2"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    }
+    if (firstLayerActive && secondLayerActive) {
+      histos.fill(HIST("TrackPar/Sigma1Pt_Layers12"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    }
+    if (fourthLayerActive) {
+      histos.fill(HIST("TrackPar/Sigma1Pt_Layer4"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    }
+    if (fifthLayerActive) {
+      histos.fill(HIST("TrackPar/Sigma1Pt_Layer5"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    }
+    if (sixthLayerActive) {
+      histos.fill(HIST("TrackPar/Sigma1Pt_Layer6"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    }
+    if (fourthLayerActive && fifthLayerActive) {
+      histos.fill(HIST("TrackPar/Sigma1Pt_Layers45"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    }
+    if (fifthLayerActive && sixthLayerActive) {
+      histos.fill(HIST("TrackPar/Sigma1Pt_Layers56"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    }
+    if (fourthLayerActive && sixthLayerActive) {
+      histos.fill(HIST("TrackPar/Sigma1Pt_Layers46"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    }
+    if (fourthLayerActive && fifthLayerActive && sixthLayerActive) {
+      histos.fill(HIST("TrackPar/Sigma1Pt_Layers456"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
+    }
+    // fill ITS variables
+    histos.fill(HIST("ITS/itsNCls"), track.pt(), track.sigma1Pt() * track.pt(), track.itsNCls(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("ITS/itsChi2NCl"), track.pt(), track.sigma1Pt() * track.pt(), track.itsChi2NCl(), collision.centFT0A(), collision.centFT0C());
+    for (unsigned int i = 0; i < 7; i++) {
+      if (track.itsClusterMap() & (1 << i)) {
+        histos.fill(HIST("ITS/itsHits"), track.pt(), track.sigma1Pt() * track.pt(), i, collision.centFT0A(), collision.centFT0C());
+      }
+    }
+    // fill TPC variables
+    histos.fill(HIST("TPC/tpcNClsFindable"), track.pt(), track.sigma1Pt() * track.pt(), track.tpcNClsFindable(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("TPC/tpcNClsFound"), track.pt(), track.sigma1Pt() * track.pt(), track.tpcNClsFound(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("TPC/tpcNClsShared"), track.pt(), track.sigma1Pt() * track.pt(), track.tpcNClsShared(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("TPC/tpcNClsCrossedRows"), track.pt(), track.sigma1Pt() * track.pt(), track.tpcNClsCrossedRows(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("TPC/tpcCrossedRowsOverFindableCls"), track.sigma1Pt() * track.pt(), track.pt(), track.tpcCrossedRowsOverFindableCls(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("TPC/tpcFractionSharedCls"), track.pt(), track.sigma1Pt() * track.pt(), track.tpcFractionSharedCls(), collision.centFT0A(), collision.centFT0C());
+    histos.fill(HIST("TPC/tpcChi2NCl"), track.pt(), track.sigma1Pt() * track.pt(), track.tpcChi2NCl(), collision.centFT0A(), collision.centFT0C());
+  }
+
   Preslice<aod::Track> trackPerColl = aod::track::collisionId;
   using CollisionCandidate = soa::Join<aod::Collisions, aod::EvSels, aod::Mults, aod::CentFT0Ms, aod::CentFT0As, aod::CentFT0Cs>;
   using TrackCandidates = soa::Join<aod::FullTracks, aod::TracksDCA, aod::TrackSelection, aod::TracksCov>;
@@ -308,93 +335,15 @@ struct TrackJetQa {
   {
     for (const auto& collision : collisions) {
       auto tracksInCollision = tracks.sliceBy(trackPerColl, collision.globalIndex());
-      if (fillEventQa(collision)) {
-        if (fillMultiplicity) {
-          histos.fill(HIST("EventProp/MultCorrelations"), collision.centFT0A(), collision.centFT0C(), collision.centFT0M(), collision.multFT0A(), collision.multFT0C(), collision.multFT0M(), collision.multNTracksPV(), tracksInCollision.size());
-        }
+      if (checkEventSelection(collision)) {
+        histos.fill(HIST("EventProp/MultCorrelations"), collision.centFT0A(), collision.centFT0C(), collision.centFT0M(), collision.multFT0A(), collision.multFT0C(), collision.multFT0M(), collision.multNTracksPV(), tracksInCollision.size());
         for (const auto& track : tracksInCollision) {
-          if (track.has_collision() && (collision.globalIndex() == track.collisionId())) { // double check
-            if (fillTrackQa(track)) {
-              histos.fill(HIST("TrackEventPar/MultCorrelations"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C(), collision.centFT0M(), collision.multFT0A(), collision.multFT0C(), collision.multFT0M(), collision.multNTracksPV());
-              // fill kinematic variables
-              histos.fill(HIST("Kine/pt"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              if (track.hasTRD()) {
-                histos.fill(HIST("Kine/pt_TRD"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-                histos.fill(HIST("TrackPar/Sigma1Pt_hasTRD"), track.pt(), track.sigma1Pt() * track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              }
-              if (!track.hasTRD()) {
-                histos.fill(HIST("TrackPar/Sigma1Pt_hasNoTRD"), track.pt(), track.sigma1Pt() * track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              }
-              histos.fill(HIST("Kine/EtaPhiPt"), track.pt(), track.sigma1Pt() * track.pt(), track.eta(), track.phi(), collision.centFT0A(), collision.centFT0C());
-              // fill track parameter variables
-              histos.fill(HIST("TrackPar/alpha"), track.pt(), track.sigma1Pt() * track.pt(), track.alpha(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("TrackPar/xyz"), track.pt(), track.sigma1Pt() * track.pt(), track.x(), track.y(), track.z(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("TrackPar/signed1Pt"), track.pt(), track.sigma1Pt() * track.pt(), track.signed1Pt(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("TrackPar/snp"), track.pt(), track.sigma1Pt() * track.pt(), track.snp(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("TrackPar/tgl"), track.pt(), track.sigma1Pt() * track.pt(), track.tgl(), collision.centFT0A(), collision.centFT0C());
-              for (unsigned int i = 0; i < 64; i++) {
-                if (track.flags() & (1 << i)) {
-                  histos.fill(HIST("TrackPar/flags"), track.pt(), track.sigma1Pt() * track.pt(), i);
-                }
-              }
-              histos.fill(HIST("TrackPar/dcaXY"), track.pt(), track.sigma1Pt() * track.pt(), track.dcaXY(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("TrackPar/dcaZ"), track.pt(), track.sigma1Pt() * track.pt(), track.dcaZ(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("TrackPar/length"), track.pt(), track.sigma1Pt() * track.pt(), track.length(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("TrackPar/Sigma1Pt"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              //// check the uncertainty over pT activating several ITS layers
-              bool firstLayerActive = track.itsClusterMap() & (1 << 0);
-              bool secondLayerActive = track.itsClusterMap() & (1 << 1);
-              bool fourthLayerActive = track.itsClusterMap() & (1 << 3);
-              bool fifthLayerActive = track.itsClusterMap() & (1 << 4);
-              bool sixthLayerActive = track.itsClusterMap() & (1 << 5);
-              if (firstLayerActive) {
-                histos.fill(HIST("TrackPar/Sigma1Pt_Layer1"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              }
-              if (secondLayerActive) {
-                histos.fill(HIST("TrackPar/Sigma1Pt_Layer2"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              }
-              if (firstLayerActive && secondLayerActive) {
-                histos.fill(HIST("TrackPar/Sigma1Pt_Layers12"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              }
-              if (fourthLayerActive) {
-                histos.fill(HIST("TrackPar/Sigma1Pt_Layer4"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              }
-              if (fifthLayerActive) {
-                histos.fill(HIST("TrackPar/Sigma1Pt_Layer5"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              }
-              if (sixthLayerActive) {
-                histos.fill(HIST("TrackPar/Sigma1Pt_Layer6"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              }
-              if (fourthLayerActive && fifthLayerActive) {
-                histos.fill(HIST("TrackPar/Sigma1Pt_Layers45"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              }
-              if (fifthLayerActive && sixthLayerActive) {
-                histos.fill(HIST("TrackPar/Sigma1Pt_Layers56"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              }
-              if (fourthLayerActive && sixthLayerActive) {
-                histos.fill(HIST("TrackPar/Sigma1Pt_Layers46"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              }
-              if (fourthLayerActive && fifthLayerActive && sixthLayerActive) {
-                histos.fill(HIST("TrackPar/Sigma1Pt_Layers456"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C());
-              }
-              // fill ITS variables
-              histos.fill(HIST("ITS/itsNCls"), track.pt(), track.sigma1Pt() * track.pt(), track.itsNCls(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("ITS/itsChi2NCl"), track.pt(), track.sigma1Pt() * track.pt(), track.itsChi2NCl(), collision.centFT0A(), collision.centFT0C());
-              for (unsigned int i = 0; i < 7; i++) {
-                if (track.itsClusterMap() & (1 << i)) {
-                  histos.fill(HIST("ITS/itsHits"), track.pt(), track.sigma1Pt() * track.pt(), i, collision.centFT0A(), collision.centFT0C());
-                }
-              }
-              // fill TPC variables
-              histos.fill(HIST("TPC/tpcNClsFindable"), track.pt(), track.sigma1Pt() * track.pt(), track.tpcNClsFindable(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("TPC/tpcNClsFound"), track.pt(), track.sigma1Pt() * track.pt(), track.tpcNClsFound(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("TPC/tpcNClsShared"), track.pt(), track.sigma1Pt() * track.pt(), track.tpcNClsShared(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("TPC/tpcNClsCrossedRows"), track.pt(), track.sigma1Pt() * track.pt(), track.tpcNClsCrossedRows(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("TPC/tpcCrossedRowsOverFindableCls"), track.sigma1Pt() * track.pt(), track.pt(), track.tpcCrossedRowsOverFindableCls(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("TPC/tpcFractionSharedCls"), track.pt(), track.sigma1Pt() * track.pt(), track.tpcFractionSharedCls(), collision.centFT0A(), collision.centFT0C());
-              histos.fill(HIST("TPC/tpcChi2NCl"), track.pt(), track.sigma1Pt() * track.pt(), track.tpcChi2NCl(), collision.centFT0A(), collision.centFT0C());
+          if (track.has_collision() && (collision.globalIndex() == track.collisionId())) {
+            if(checkTrackSelection(track)){
+              histos.fill(HIST("TrackEventPar/MultCorrelations"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C(), collision.centFT0M(), collision.multFT0A(), collision.multFT0C(), collision.multFT0M(), collision.multNTracksPV(), tracksInCollision.size());
+              fillTrackQa(track, collision);
             }
-          }
+          } 
         }
       } else {
         histos.fill(HIST("EventProp/rejectedCollId"), 1);
@@ -403,106 +352,23 @@ struct TrackJetQa {
   }
   PROCESS_SWITCH(TrackJetQa, processFull, "Standard data processor", true);
 
-  //Preslice<aod::JeTrack> tracksPerColl = aod::jettrack::collisionId;
   void processDerived(aod::JeColls const& collisions, aod::JeTracks const& tracks)
   {
     for (const auto& collision : collisions) {
-      if (fillEventQa(collision)) { //tracks in JeTracks are grouped according to collisions - track multiplicity stored in JeColl
-        
-        if (fillMultiplicity) { // FT0M for now dummy info as sum of FT0A and FT0C
-          histos.fill(HIST("EventProp/MultCorrelations"), collision.centFT0A(), collision.centFT0C(), collision.centFT0A() + collision.centFT0C(), collision.multFT0A(), collision.multFT0C(), collision.multFT0A() + collision.multFT0C(), collision.multNTracksPV(), collision.multTracks());
-        }
-        //auto tracksInCollision = tracks.sliceBy(tracksPerColl, collision.globalIdx());
+      if (checkEventSelection(collision)) {
+        histos.fill(HIST("EventProp/MultCorrelations"), collision.centFT0A(), collision.centFT0C(), collision.centFT0A() + collision.centFT0C(), collision.multFT0A(), collision.multFT0C(), collision.multFT0A() + collision.multFT0C(), collision.multNTracksPV(), collision.multTracks());  
         for (const auto& track : tracks){
           if (! (track.collisionId() == collision.globalIdx())){
-            LOGF(info, "Not compatible collision Id's: %d (tracks) and %d (collisions)", track.collisionId(), collision.globalIdx());
             continue;
           }
-          if (fillTrackQa(track)) {
-            // fill kinematic variables
-            histos.fill(HIST("Kine/pt"), track.pt());
-            if (track.hasTRD()) {
-              histos.fill(HIST("Kine/pt_TRD"), track.pt());
-              histos.fill(HIST("TrackPar/Sigma1Pt_hasTRD"), track.pt(), track.sigma1Pt() * track.pt());
-            }
-            if (!track.hasTRD()) {
-              histos.fill(HIST("TrackPar/Sigma1Pt_hasNoTRD"), track.pt(), track.sigma1Pt() * track.pt());
-            }
-            histos.fill(HIST("Kine/eta"), track.pt(), track.eta());
-            histos.fill(HIST("Kine/phi"), track.pt(), track.phi());
-            histos.fill(HIST("Kine/etaVSphi"), track.eta(), track.phi());
-            histos.fill(HIST("Kine/EtaPhiPt"), track.pt(), track.eta(), track.phi());
-            // fill track parameter variables
-            histos.fill(HIST("TrackPar/alpha"), track.pt(), track.alpha());
-            histos.fill(HIST("TrackPar/x"), track.pt(), track.x());
-            histos.fill(HIST("TrackPar/y"), track.pt(), track.y());
-            histos.fill(HIST("TrackPar/z"), track.pt(), track.z());
-            histos.fill(HIST("TrackPar/signed1Pt"), track.pt(), track.signed1Pt());
-            histos.fill(HIST("TrackPar/snp"), track.pt(), track.snp());
-            histos.fill(HIST("TrackPar/tgl"), track.pt(), track.tgl());
-            for (unsigned int i = 0; i < 64; i++) {
-              if (track.flags() & (1 << i)) {
-                histos.fill(HIST("TrackPar/flags"), track.pt(), i);
-              }
-            }
-            histos.fill(HIST("TrackPar/dcaXY"), track.pt(), track.dcaXY());
-            histos.fill(HIST("TrackPar/dcaZ"), track.pt(), track.dcaZ());
-            histos.fill(HIST("TrackPar/length"), track.pt(), track.length());
-            histos.fill(HIST("TrackPar/Sigma1Pt"), track.pt(), track.sigma1Pt() * track.pt());
-            //// check the uncertainty over pT activating several ITS layers
-            bool firstLayerActive = track.itsClusterMap() & (1 << 0);
-            bool secondLayerActive = track.itsClusterMap() & (1 << 1);
-            bool fourthLayerActive = track.itsClusterMap() & (1 << 3);
-            bool fifthLayerActive = track.itsClusterMap() & (1 << 4);
-            bool sixthLayerActive = track.itsClusterMap() & (1 << 5);
-            if (firstLayerActive) {
-              histos.fill(HIST("TrackPar/Sigma1Pt_Layer1"), track.pt(), track.sigma1Pt() * track.pt());
-            }
-            if (secondLayerActive) {
-              histos.fill(HIST("TrackPar/Sigma1Pt_Layer2"), track.pt(), track.sigma1Pt() * track.pt());
-            }
-            if (firstLayerActive && secondLayerActive) {
-              histos.fill(HIST("TrackPar/Sigma1Pt_Layers12"), track.pt(), track.sigma1Pt() * track.pt());
-            }
-            if (fourthLayerActive) {
-              histos.fill(HIST("TrackPar/Sigma1Pt_Layer4"), track.pt(), track.sigma1Pt() * track.pt());
-            }
-            if (fifthLayerActive) {
-              histos.fill(HIST("TrackPar/Sigma1Pt_Layer5"), track.pt(), track.sigma1Pt() * track.pt());
-            }
-            if (sixthLayerActive) {
-              histos.fill(HIST("TrackPar/Sigma1Pt_Layer6"), track.pt(), track.sigma1Pt() * track.pt());
-            }
-            if (fourthLayerActive && fifthLayerActive) {
-              histos.fill(HIST("TrackPar/Sigma1Pt_Layers45"), track.pt(), track.sigma1Pt() * track.pt());
-            }
-            if (fifthLayerActive && sixthLayerActive) {
-              histos.fill(HIST("TrackPar/Sigma1Pt_Layers56"), track.pt(), track.sigma1Pt() * track.pt());
-            }
-            if (fourthLayerActive && sixthLayerActive) {
-              histos.fill(HIST("TrackPar/Sigma1Pt_Layers46"), track.pt(), track.sigma1Pt() * track.pt());
-            }
-            if (fourthLayerActive && fifthLayerActive && sixthLayerActive) {
-              histos.fill(HIST("TrackPar/Sigma1Pt_Layers456"), track.pt(), track.sigma1Pt() * track.pt());
-            }
-            // fill ITS variables
-            histos.fill(HIST("ITS/itsNCls"), track.pt(), track.itsNCls());
-            histos.fill(HIST("ITS/itsChi2NCl"), track.pt(), track.itsChi2NCl());
-            for (unsigned int i = 0; i < 7; i++) {
-              if (track.itsClusterMap() & (1 << i)) {
-                histos.fill(HIST("ITS/itsHits"), track.pt(), i);
-              }
-            }
-            // fill TPC variables
-            histos.fill(HIST("TPC/tpcNClsFindable"), track.pt(), track.tpcNClsFindable());
-            histos.fill(HIST("TPC/tpcNClsFound"), track.pt(), track.tpcNClsFound());
-            histos.fill(HIST("TPC/tpcNClsShared"), track.pt(), track.tpcNClsShared());
-            histos.fill(HIST("TPC/tpcNClsCrossedRows"), track.pt(), track.tpcNClsCrossedRows());
-            histos.fill(HIST("TPC/tpcCrossedRowsOverFindableCls"), track.pt(), track.tpcCrossedRowsOverFindableCls());
-            histos.fill(HIST("TPC/tpcFractionSharedCls"), track.pt(), track.tpcFractionSharedCls());
-            histos.fill(HIST("TPC/tpcChi2NCl"), track.pt(), track.tpcChi2NCl());
+          //LOGF(info, "Compatible Id's: %d (tracks) and %d (collisions)", track.collisionId(), collision.globalIdx());
+          if(checkTrackSelection(track)){
+            histos.fill(HIST("TrackEventPar/MultCorrelations"), track.pt(), track.sigma1Pt() * track.pt(), collision.centFT0A(), collision.centFT0C(), collision.centFT0A() + collision.centFT0C(), collision.multFT0A(), collision.multFT0C(), collision.multFT0A() + collision.multFT0C(), collision.multNTracksPV(), collision.multTracks());
+            fillTrackQa(track, collision);
           }
         }
+      } else {
+        histos.fill(HIST("EventProp/rejectedCollId"), 1);
       }
     }
   }
