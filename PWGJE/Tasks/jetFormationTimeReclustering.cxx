@@ -106,15 +106,15 @@ DECLARE_SOA_COLUMN(SplittingMatchingHF, splittingMatchingHF, std::vector<int32_t
 
 namespace jetoutput
 {
-DECLARE_SOA_COLUMN(JetPt, jetPt, float);                     //!
-DECLARE_SOA_COLUMN(JetPhi, jetPhi, float);                   //!
-DECLARE_SOA_COLUMN(JetEta, jetEta, float);                   //!
-DECLARE_SOA_COLUMN(JetY, jetY, float);                       //!
-DECLARE_SOA_COLUMN(JetR, jetR, float);                       //!
-DECLARE_SOA_COLUMN(JetArea, jetArea, float);                 //!
-DECLARE_SOA_COLUMN(JetRho, jetRho, float);                   //!
-DECLARE_SOA_COLUMN(JetPerpConeRho, jetPerpConeRho, float);   //!
-DECLARE_SOA_COLUMN(JetNConstituents, jetNConstituents, int); //!
+DECLARE_SOA_COLUMN(PtJet, ptJet, float);                     //!
+DECLARE_SOA_COLUMN(PhiJet, phiJet, float);                   //!
+DECLARE_SOA_COLUMN(EtaJet, etaJet, float);                   //!
+DECLARE_SOA_COLUMN(Yjet, yJet, float);                       //!
+DECLARE_SOA_COLUMN(Rjet, rJet, float);                       //!
+DECLARE_SOA_COLUMN(areaJet, areaJet, float);                 //!
+DECLARE_SOA_COLUMN(RhoJet, rhoJet, float);                   //!
+DECLARE_SOA_COLUMN(PerpConeRhoJet, perpConeRhoJet, float);   //!
+DECLARE_SOA_COLUMN(NConstituentsJet, nConstituentsJet, int); //!
 } // namespace jetoutput
                     
 #define MCCOLL_TABLE_DEF(_jet_type_, _jet_description_, _name_)                                  \
@@ -154,8 +154,8 @@ DECLARE_SOA_COLUMN(JetNConstituents, jetNConstituents, int); //!
     DECLARE_SOA_INDEX_COLUMN_CUSTOM(_jet_type_##O, outputTable, _jet_description_ "OS");                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         \
     DECLARE_SOA_DYNAMIC_COLUMN(Dummy##_jet_type_, dummy##_jet_type_, []() -> int { return 0; });                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 \
   }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              \
-  DECLARE_SOA_TABLE(_jet_type_##SSs, "AOD", _jet_description_ "SS", jetsubstructure::EnergyMother, jetsubstructure::PtLeading, jetsubstructure::PtSubLeading, jetsubstructure::Theta, jetsubstructure::PtLeadingConstituent, jetsubstructure::TauForm, jetsubstructure::Z, jetsubstructure::Ptg, jetsubstructure::Thetag, jetsubstructure::Zg, jetsubstructure::TauFromg, _name_##substructure::Dummy##_jet_type_<>);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             \
-  DECLARE_SOA_TABLE(_jet_type_##SSOs, "AOD", _jet_description_ "SSO", _name_##substructure::_jet_type_##OId, jetsubstructure::EnergyMother, jetsubstructure::PtLeading, jetsubstructure::PtSubLeading, jetsubstructure::Theta, jetsubstructure::PtLeadingConstituent, jetsubstructure::TauForm, jetsubstructure::Z, jetsubstructure::Ptg, jetsubstructure::Thetag, jetsubstructure::Zg, jetsubstructure::TauFromg);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
+  DECLARE_SOA_TABLE(_jet_type_##SSs, "AOD", _jet_description_ "SS", jetoutput::PtJet, jetoutput::EtaJet, jetsubstructure::EnergyMother, jetsubstructure::PtLeading, jetsubstructure::PtSubLeading, jetsubstructure::Theta, jetsubstructure::PtLeadingConstituent, jetsubstructure::TauForm, jetsubstructure::Z, jetsubstructure::Ptg, jetsubstructure::Thetag, jetsubstructure::Zg, jetsubstructure::TauFromg, _name_##substructure::Dummy##_jet_type_<>);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             \
+  DECLARE_SOA_TABLE(_jet_type_##SSOs, "AOD", _jet_description_ "SSO", _name_##substructure::_jet_type_##OId, jetoutput::PtJet, jetoutput::EtaJet, jetsubstructure::EnergyMother, jetsubstructure::PtLeading, jetsubstructure::PtSubLeading, jetsubstructure::Theta, jetsubstructure::PtLeadingConstituent, jetsubstructure::TauForm, jetsubstructure::Z, jetsubstructure::Ptg, jetsubstructure::Thetag, jetsubstructure::Zg, jetsubstructure::TauFromg);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               \
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  \
   using _jet_type_##O = _jet_type_##Os::iterator;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \
   using _jet_type_##SSO = _jet_type_##SSOs::iterator;
@@ -237,6 +237,7 @@ struct FormationTimeReclustering {
   std::vector<fastjet::PseudoJet> jetReclustered;
   JetFinder jetReclusterer;
 
+
   std::vector<float> energyMotherVec;
   std::vector<float> ptLeadingVec;
   std::vector<float> ptSubLeadingVec;
@@ -251,7 +252,8 @@ struct FormationTimeReclustering {
   std::vector<float> taugVec;
 
   float leadingConstituentPt;
-
+  float ptJet;
+  float etaJet;
   HistogramRegistry registry;
 
   void init(InitContext const&)
@@ -272,7 +274,6 @@ struct FormationTimeReclustering {
     registry.add("h2_jet_pt_jet_nsd_eventwiseconstituentsubtracted", ";#it{p}_{T,jet} (GeV/#it{c});#it{n}_{SD}", {HistType::kTH2F, {{200, 0., 200.}, {15, -0.5, 14.5}}});
 
     jetReclusterer.isReclustering = true;
-    //jetReclusterer.algorithm = fastjet::JetAlgorithm::cambridge_algorithm;
     jetReclusterer.fastjetExtraParam = genKTp;// in jetfinder we use p = -1 for anti kt jetfinding. Then we do time recl. with p=0.5, kt p =1, ca p=0
     jetReclusterer.algorithm = fastjet::JetAlgorithm::genkt_algorithm;// gen kt is enum 3 in jetfinder setup
 
@@ -377,11 +378,13 @@ struct FormationTimeReclustering {
   void analyseCharged(T const& jet, U const& tracks, V const& trackSlicer, M& outputTable, N& splittingTable)
   {
     jetConstituents.clear();
+    ptJet = jet.pt();
+    etaJet = jet.eta();
     for (auto& jetConstituent : jet.template tracks_as<U>()) {
       fastjetutilities::fillTracks(jetConstituent, jetConstituents, jetConstituent.globalIndex());
     }
     jetReclustering<false, isSubtracted>(jet, splittingTable);
-    outputTable(energyMotherVec, ptLeadingVec, ptSubLeadingVec, thetaVec, leadingConstituentPt, tauFormVec, zVec, ptgVec, thetagVec, zgVec, taugVec);
+    outputTable(ptJet, etaJet, energyMotherVec, ptLeadingVec, ptSubLeadingVec, thetaVec, leadingConstituentPt, tauFormVec, zVec, ptgVec, thetagVec, zgVec, taugVec);
   }
 
   void processDummy(aod::JetTracks const&)
@@ -414,11 +417,13 @@ struct FormationTimeReclustering {
                              aod::JetParticles const& particles)
   {
     jetConstituents.clear();
+    ptJet = jet.pt();
+    etaJet = jet.eta();
     for (auto& jetConstituent : jet.template tracks_as<aod::JetParticles>()) {
       fastjetutilities::fillTracks(jetConstituent, jetConstituents, jetConstituent.globalIndex(), static_cast<int>(JetConstituentStatus::track), pdg->Mass(jetConstituent.pdgCode()));
     }
     jetReclustering<true, false>(jet, jetSplittingsMCPTable);
-    jetSubstructureMCPTable(energyMotherVec, ptLeadingVec, ptSubLeadingVec, thetaVec, leadingConstituentPt, tauFormVec, zVec, ptgVec, thetagVec, zgVec, taugVec );
+    jetSubstructureMCPTable(ptJet, etaJet, energyMotherVec, ptLeadingVec, ptSubLeadingVec, thetaVec, leadingConstituentPt, tauFormVec, zVec, ptgVec, thetagVec, zgVec, taugVec );
   }
   PROCESS_SWITCH(FormationTimeReclustering, processChargedJetsMCP, "charged jet substructure on MC particle level", false);
 };
